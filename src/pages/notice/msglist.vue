@@ -19,14 +19,6 @@
             ]"
           >
             <qui-avatar
-              v-if="item.user_id === currentLoginId"
-              :is-real="item.user && item.user.isReal"
-              class="chat-box__con__msg__mine__img"
-              :user="userInfo"
-              @click="jumpUserPage(item.user_id)"
-            />
-            <qui-avatar
-              v-if="item.user_id !== currentLoginId"
               :is-real="item.user && item.user.isReal"
               class="chat-box__con__msg__other__img"
               :user="item.user"
@@ -82,6 +74,8 @@
           :list="allEmoji"
           position="relative"
           top="0rpx"
+          left="20rpx"
+          right="20rpx"
           v-if="emojiShow"
           @click="getEmojiClick"
         ></qui-emoji>
@@ -134,9 +128,11 @@ export default {
       const keys = Object.keys(recordList);
       if (recordList && keys.length > 0) {
         for (let i = 0; i < keys.length; i += 1) {
-          if (recordList[keys[i]].dialog_id.toString() === this.dialogId) {
-            recordList[keys[i]].time = time2DateAndHM(recordList[keys[i]].created_at);
-            list.push(recordList[keys[i]]);
+          const row = recordList[keys[i]];
+          if (row.dialog_id.toString() === this.dialogId) {
+            row.time = time2DateAndHM(row.created_at);
+            row.user = this.$store.getters['jv/get'](`users/${row.user_id}`);
+            list.push(row);
           }
         }
       }
@@ -279,7 +275,6 @@ export default {
       }
     },
     cursorFocus(e) {
-      console.log('聚焦', e);
       if (e) {
         this.emojiShow = false;
       }
@@ -299,6 +294,8 @@ export default {
           duration: 2000,
         });
       } else {
+        console.log('---------this.dialogId', this.dialogId);
+        console.log('---------type', typeof this.dialogId);
         if (this.dialogId === '0') {
           const params = {
             _jv: {
@@ -317,12 +314,22 @@ export default {
               }
             })
             .catch(err => {
-              console.log(err);
-              uni.showToast({
-                icon: 'none',
-                title: this.i18n.t('core.permission_denied'),
-                duration: 2000,
-              });
+              if (err && err.data && err.data.errors) {
+                if (err.data.errors[0].code === 'content_banned') {
+                  uni.showToast({
+                    icon: 'none',
+                    title: this.i18n.t('core.content_banned'),
+                    duration: 2000,
+                  });
+                }
+                if (err.data.errors[0].code === 'permission_denied') {
+                  uni.showToast({
+                    icon: 'none',
+                    title: this.i18n.t('core.permission_denied'),
+                    duration: 2000,
+                  });
+                }
+              }
             });
         } else {
           const params = {
@@ -341,12 +348,22 @@ export default {
               }
             })
             .catch(err => {
-              console.log(err);
-              uni.showToast({
-                icon: 'none',
-                title: this.i18n.t('core.permission_denied'),
-                duration: 2000,
-              });
+              if (err && err.data && err.data.errors) {
+                if (err.data.errors[0].code === 'content_banned') {
+                  uni.showToast({
+                    icon: 'none',
+                    title: this.i18n.t('core.content_banned'),
+                    duration: 2000,
+                  });
+                }
+                if (err.data.errors[0].code === 'permission_denied') {
+                  uni.showToast({
+                    icon: 'none',
+                    title: this.i18n.t('core.permission_denied'),
+                    duration: 2000,
+                  });
+                }
+              }
             });
         }
         this.msg = '';
@@ -539,7 +556,7 @@ export default {
     &__msg {
       display: flex;
       flex-direction: row;
-      justify-content: space-around;
+      justify-content: space-between;
       align-items: center;
       padding: 20rpx 20rpx 40rpx;
       background: --color(--qui-BG-BTN-GRAY-1);
@@ -558,10 +575,13 @@ export default {
     }
 
     &__btn {
-      margin: 0 20rpx 0 10rpx;
+      margin: 0 0 0 10rpx;
       font-size: $fg-f4;
       background: --color(--qui-BG-BTN);
     }
   }
+}
+/deep/ .emoji-box {
+  width: calc(100vw - 40rpx);
 }
 </style>

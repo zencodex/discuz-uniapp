@@ -66,13 +66,14 @@
                 <view>
                   <radio
                     :value="item.value"
-                    :namr="item.index"
+                    :name="item.index"
                     :checked="index === current"
                     class="radio"
                     color="#2699fb"
                     :disabled="
                       (descriptionShow && !walletStatus && item.name === p.walletPay) ||
-                        (descriptionShow && !(money <= balance) && item.name === p.walletPay)
+                        (descriptionShow && !(money <= balance) && item.name === p.walletPay) ||
+                        item.hide
                     "
                   />
                 </view>
@@ -81,7 +82,7 @@
           </radio-group>
         </view>
 
-        <view class="pay-tip">
+        <view class="pay-tip" v-if="payTipShow">
           ￥{{ money }}{{ p.rmb }}{{ p.payTo }}{{ toName }}{{ p.ofAccount }}
         </view>
         <!--<qui-button size="max" type="primary" class="paySureBtn" @click="paysureShow">
@@ -134,8 +135,8 @@ export default {
     },
     // 支付金额
     money: {
-      type: Number,
-      default: 0,
+      type: [Number, String],
+      default: 0.0,
     },
     // 余额
     balance: {
@@ -151,6 +152,16 @@ export default {
     toName: {
       type: String,
       default: '',
+    },
+    // 默认支付方式
+    currentPayType: {
+      type: [Number, String],
+      default: '',
+    },
+    // 支付提示
+    payTipShow: {
+      type: Boolean,
+      default: true,
     },
     // 支付方式数组
     payTypeData: {
@@ -171,6 +182,10 @@ export default {
       type: String,
       default: '',
     },
+    payId: {
+      type: [String, Number],
+      default: '',
+    },
   },
 
   data() {
@@ -182,7 +197,7 @@ export default {
       checkVal: '1',
       checkStatus: true, // 单选框状态
       // checkStatusVal: 1, // 单选框状态
-      current: 0,
+      current: this.currentPayType,
     };
   },
   computed: {
@@ -218,7 +233,8 @@ export default {
     },
     // 父组件触发是否显示弹框
     payClickShow(val) {
-      if (val === 0) {
+      console.log('子组件内', val);
+      if (val === 0 || val === 2) {
         this.$refs.payPopup.open();
       } else {
         this.$refs.payTypePopup.open();
@@ -226,6 +242,7 @@ export default {
     },
     // 是否显示钱包密码支付框
     paysureShow() {
+      console.log(this.current, '#######');
       if (this.current === 0) {
         // 这是微信支付
       } else if (this.current === 1) {
@@ -233,11 +250,17 @@ export default {
         this.show = true;
         this.$refs.payTypePopup.close();
         this.$refs.keyboardPopup.open();
+      } else {
+        uni.showToast({
+          title: this.p.pleaseSelectPaymentMethod,
+          icon: 'none',
+        });
       }
       this.$emit('paysureShow', this.current);
     },
     // 支付方式单选框change事件
     radioChange(evt) {
+      console.log(evt, 'evt');
       for (let i = 0; i < this.payTypeData.length; i += 1) {
         if (this.payTypeData[i].value === evt.target.value) {
           this.current = i;

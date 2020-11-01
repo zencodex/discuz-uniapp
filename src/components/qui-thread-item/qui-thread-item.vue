@@ -1,19 +1,27 @@
 <template>
-  <view class="home">
+  <view class="thread">
     <qui-content
       :ref="'thread-' + currentindex"
       :currentindex="currentindex"
       :pay-status="(thread.price > 0 && thread.paid) || thread.price == 0"
       :user-name="thread.user ? thread.user.username : ''"
       :theme-image="thread.user ? thread.user.avatarUrl : ''"
+      :post-goods="thread.firstPost.postGoods ? thread.firstPost.postGoods : ''"
       :is-real="thread.user ? thread.user.isReal : false"
       :theme-btn="thread.canHide || ''"
       :theme-reply-btn="thread.canReply || ''"
-      :user-groups="thread.user && thread.user.groups"
+      :user-groups="handleGroup(thread.user && thread.user.groups)"
+      :user-answer-groups="
+        handleGroup(thread.question && thread.question.beUser ? thread.question.beUser.groups : [])
+      "
+      :answer-image="
+        thread.question && thread.question.beUser ? thread.question.beUser.avatarUrl : ''
+      "
+      :theme-time-answer="thread.question && thread.question.answered_at"
       :theme-time="thread.createdAt"
       :theme-content="thread.type == 1 ? thread.title : thread.firstPost.summary"
       :thread-type="thread.type"
-      :them-pay-btn="thread.price > 0"
+      :them-pay-btn="thread.price > 0 || thread.attachmentPrice > 0"
       :media-url="thread.threadVideo && thread.threadVideo.media_url"
       :is-great="thread.firstPost.isLiked"
       :theme-like="thread.firstPost.likeCount"
@@ -27,9 +35,22 @@
       :cover-image="thread.threadVideo && thread.threadVideo.cover_url"
       :duration="thread.threadVideo && thread.threadVideo.duration"
       :is-deleted="thread.isDeleted"
+      :questions-name="thread.user.username"
+      :be-ask-name="
+        thread.question && thread.question.beUser ? thread.question.beUser.username : ''
+      "
+      :question-content="thread.question && thread.question.content"
+      :add-ask="thread.question && thread.question.is_answer"
+      :onlooker-number="thread.question && thread.question.onlooker_number"
+      :free-ask="thread.question && thread.question.price == 0"
+      :ask-price="thread.question && thread.question.price"
+      :ask-content="thread.question && thread.question.content"
+      :onlooker-unit-price="thread.question && thread.question.onlooker_unit_price"
+      :on-looker="thread.question && thread.question.onlooker_unit_price == 0"
       :thread-position="
         thread.location ? [thread.location, thread.address, thread.longitude, thread.latitude] : []
       "
+      :thread-audio="thread.threadAudio"
       @click="handleClickShare(thread._jv.id)"
       @handleIsGreat="
         handleIsGreat(
@@ -40,6 +61,8 @@
         )
       "
       @commentClick="commentClick(thread._jv.id)"
+      @answeClick="answeClick(thread.user._jv.id)"
+      @beAskClick="beAskClick(thread.question.beUser.id)"
       @contentClick="contentClick(thread._jv.id)"
       @backgroundClick="contentClick(thread._jv.id)"
       @headClick="headClick(thread.user._jv.id)"
@@ -54,17 +77,17 @@
 <script>
 // #ifdef H5
 import wxshare from '@/mixin/wxshare-h5';
-import loginAuth from '@/mixin/loginAuth-h5';
 // #endif
 import forums from '@/mixin/forums';
+import loginModule from '@/mixin/loginModule';
 import { getCurUrl } from '@/utils/getCurUrl';
 
 export default {
   mixins: [
     forums,
-    // #ifdef  H5
+    loginModule,
+    // #ifdef H5
     wxshare,
-    loginAuth,
     // #endif
   ],
   props: {
@@ -73,6 +96,10 @@ export default {
       default: () => {
         return {};
       },
+    },
+    conversationId: {
+      type: [Number, String],
+      default: 0,
     },
     currentindex: {
       type: [Number, String],
@@ -93,13 +120,35 @@ export default {
   methods: {
     // 内容部分点击跳转到详情页
     contentClick(id) {
-      uni.navigateTo({
-        url: `/pages/topic/index?id=${id}`,
-      });
       this.$emit('toTopic', id);
+      uni.navigateTo({
+        url: `/topic/index?id=${id}&topicid=${this.conversationId}`,
+      });
     },
     // 点击头像调转到个人主页
     headClick(id) {
+      if (id <= 0) {
+        return;
+      }
+      uni.navigateTo({
+        url: `/pages/profile/index?userId=${id}`,
+      });
+    },
+    // 点击用户名跳转提问者个人主页
+    answeClick(id) {
+      if (id <= 0) {
+        return;
+      }
+      uni.navigateTo({
+        url: `/pages/profile/index?userId=${id}`,
+      });
+    },
+    // 点击用户名跳转回答者个人主页
+    beAskClick(id) {
+      console.log('ididdidiidid');
+      if (id <= 0) {
+        return;
+      }
       uni.navigateTo({
         url: `/pages/profile/index?userId=${id}`,
       });
@@ -121,19 +170,16 @@ export default {
     },
     // 内容部分点赞按钮点击事件
     handleIsGreat(id, canLike, isLiked, index) {
-      console.log('内容部分点赞按钮点击事件', getCurUrl());
       if (!this.$store.getters['session/get']('isLogin')) {
         uni.setStorage({
           key: 'page',
           data: getCurUrl(),
         });
         // #ifdef MP-WEIXIN
-        this.$store.getters['session/get']('auth').open();
+        this.mpLoginMode();
         // #endif
         // #ifdef H5
-        if (!this.handleLogin()) {
-          return;
-        }
+        this.h5LoginMode();
         // #endif
       }
       const params = {
@@ -157,27 +203,23 @@ export default {
     // 内容部分点击评论跳到详情页
     commentClick(id) {
       uni.navigateTo({
-        url: `/pages/topic/index?id=${id}`,
+        url: `/topic/index?id=${id}`,
       });
       this.$emit('toTopic', id);
     },
     // 首页内容部分分享按钮弹窗
     handleClickShare(id) {
-      console.log('首页内容部分分享按钮弹窗', getCurUrl());
       if (!this.$store.getters['session/get']('isLogin')) {
         uni.setStorage({
           key: 'page',
           data: getCurUrl(),
         });
         // #ifdef MP-WEIXIN
-        this.$store.getters['session/get']('auth').open();
+        this.mpLoginMode();
         // #endif
         // #ifdef H5
-        if (!this.handleLogin()) {
-          return;
-        }
+        this.h5LoginMode();
         // #endif
-        return;
       }
       // #ifdef MP-WEIXIN
       this.$emit('handleClickShare', id);
@@ -197,6 +239,16 @@ export default {
         url: 'pages/topic/index',
       });
       // #endif
+    },
+    handleGroup(data) {
+      let groups = [];
+      if (data && data.length > 0) {
+        groups = data.filter(item => item.isDisplay);
+      }
+      if (groups.length > 0) {
+        return [groups[0]];
+      }
+      return [];
     },
   },
 };

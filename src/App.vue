@@ -76,6 +76,18 @@ export default {
         // #endif
         if (pages.length > 0) {
           currentPage = pages[pages.length - 1];
+          if (currentPage.route === 'pages/user/pc-login') {
+            uni.redirectTo({
+              url: currentPage.__page__.fullPath,
+            });
+            return;
+          }
+          if (currentPage.route === 'pages/user/pc-relation') {
+            uni.redirectTo({
+              url: currentPage.__page__.fullPath,
+            });
+            return;
+          }
           if (!user.paid && currentPage.route !== 'pages/site/info' && currentPage.route !== 'pages/site/partner-invite') {
             uni.redirectTo({
               url: '/pages/site/info',
@@ -124,7 +136,6 @@ export default {
           this.$u.event.$emit('captchaResult', result);
         }
       } else {
-        console.log(result, '用户关闭了验证码');
         this.$u.event.$emit('closeChaReault', result);
         // 用户关闭了验证码
       }
@@ -132,6 +143,10 @@ export default {
     // #endif
   },
   onHide() {},
+  onPageNotFound() {
+    const url = '/pages/common/error';
+    uni.redirectTo({url});
+  },
 };
 </script>
 

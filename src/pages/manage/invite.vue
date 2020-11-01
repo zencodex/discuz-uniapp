@@ -2,10 +2,10 @@
   <qui-page :data-qui-theme="theme">
     <scroll-view
       scroll-y
-      show-scrollbar="false"
-      show-icon
+      scroll-with-animation
       class="invite"
       :style="current === 0 ? 'bottom: 150rpx;' : 'bottom: 0rpx;'"
+      @scrolltolower="pullDown"
     >
       <!-- 标签栏 -->
       <view class="invite-tabs">
@@ -18,41 +18,37 @@
         <view>{{ role }}</view>
         <view>
           <view v-if="current === 0" class="items">
-            <qui-invite
-              :total="total"
-              :status="status"
-              :list="allInviteList"
-              v-if="allInviteList && allInviteList.length > 0"
-              @setInvalid="setInvalid"
-              @share="share"
-            ></qui-invite>
+            <view v-if="allInviteList && allInviteList.length > 0">
+              <qui-invite
+                :total="total"
+                :status="status"
+                :list="allInviteList"
+                @setInvalid="setInvalid"
+                @share="share"
+              ></qui-invite>
+              <qui-load-more :status="loadingType"></qui-load-more>
+            </view>
             <qui-no-data :tips="i18n.t('manage.noContent')" v-else></qui-no-data>
           </view>
           <view v-if="current === 1" class="items">
-            <qui-invite
-              :total="total"
-              :status="status"
-              :list="allInviteList"
-              v-if="allInviteList && allInviteList.length > 0"
-            ></qui-invite>
+            <view v-if="allInviteList && allInviteList.length > 0">
+              <qui-invite :total="total" :status="status" :list="allInviteList"></qui-invite>
+              <qui-load-more :status="loadingType"></qui-load-more>
+            </view>
             <qui-no-data :tips="i18n.t('manage.noContent')" v-else></qui-no-data>
           </view>
           <view v-if="current === 2" class="items">
-            <qui-invite
-              :total="total"
-              :status="status"
-              :list="allInviteList"
-              v-if="allInviteList && allInviteList.length > 0"
-            ></qui-invite>
+            <view v-if="allInviteList && allInviteList.length > 0">
+              <qui-invite :total="total" :status="status" :list="allInviteList"></qui-invite>
+              <qui-load-more :status="loadingType"></qui-load-more>
+            </view>
             <qui-no-data :tips="i18n.t('manage.noContent')" v-else></qui-no-data>
           </view>
           <view v-if="current === 3" class="items">
-            <qui-invite
-              :total="total"
-              :status="status"
-              :list="allInviteList"
-              v-if="allInviteList && allInviteList.length > 0"
-            ></qui-invite>
+            <view v-if="allInviteList && allInviteList.length > 0">
+              <qui-invite :total="total" :status="status" :list="allInviteList"></qui-invite>
+              <qui-load-more :status="loadingType"></qui-load-more>
+            </view>
             <qui-no-data :tips="i18n.t('manage.noContent')" v-else></qui-no-data>
           </view>
         </view>
@@ -141,6 +137,10 @@ export default {
       ],
       navbarHeight: 0,
       isWeixin: '', // 是否是微信浏览器
+      inviteList: [], // 列表数据
+      loadingType: 'more', // 上拉加载状态
+      pageNum: 1, // 当前页数
+      pageSize: 20, // 每页20条数据
     };
   },
   onLoad() {
@@ -186,13 +186,12 @@ export default {
     // 获取管理邀请列表（非管理员无的邀请链接无管理）
     allInviteList() {
       const list = [];
-      const inviteList = this.$store.getters['jv/get']('invite');
       const groupList = this.$store.getters['jv/get']('groups');
-      const inviteListKeys = Object.keys(inviteList);
+      const inviteListKeys = Object.keys(this.inviteList);
       const groupListKeys = Object.keys(groupList);
-      if (inviteList && inviteListKeys.length > 0) {
+      if (this.inviteList && inviteListKeys.length > 0) {
         for (let i = 0; i < inviteListKeys.length; i += 1) {
-          const inviteListValue = inviteList[inviteListKeys[i]];
+          const inviteListValue = this.inviteList[inviteListKeys[i]];
           const day = timestamp2day(inviteListValue.endtime);
           if (inviteListValue.status === 1) {
             inviteListValue.time = this.i18n.t('manage.remainDay', { day });
@@ -232,10 +231,16 @@ export default {
     getInviteList(status) {
       const params = {
         'filter[status]': status,
+        'page[number]': this.pageNum,
+        'page[limit]': this.pageSize,
       };
       this.$store.commit('jv/clearRecords', { _jv: { type: 'invite' } });
       this.$store.dispatch('jv/get', ['invite', { params }]).then(res => {
-        this.total = res._jv.json.meta.total;
+        if (res && res._jv && res._jv.json && res._jv.json.data) {
+          this.total = res._jv.json.meta.total;
+          this.inviteList = [...this.inviteList, ...res];
+          this.loadingType = res.length === this.pageSize ? 'more' : 'nomore';
+        }
       });
     },
     // 调用 获取所有用户组 接口
@@ -251,6 +256,8 @@ export default {
       if (e.currentIndex !== this.current) {
         this.current = e.currentIndex;
         this.status = this.tabList[e.currentIndex].status;
+        this.pageNum = 1;
+        this.inviteList = [];
         this.getInviteList(this.tabList[e.currentIndex].status);
       }
     },
@@ -283,6 +290,8 @@ export default {
           .then(res => {
             if (res) {
               this.$refs.popup.close();
+              this.inviteList = [];
+              this.pageNum = 1;
               this.getInviteList(1);
             }
           })
@@ -296,6 +305,8 @@ export default {
           .then(res => {
             if (res) {
               this.$refs.popup.close();
+              this.inviteList = [];
+              this.pageNum = 1;
               this.getInviteList(1);
             }
           })
@@ -308,6 +319,8 @@ export default {
     setInvalid(id) {
       this.$store.dispatch('jv/delete', `invite/${id}`).then(res => {
         if (res) {
+          this.inviteList = [];
+          this.pageNum = 1;
           this.getInviteList(this.status);
           uni.showToast({
             title: this.i18n.t('manage.invalidLink'),
@@ -336,6 +349,14 @@ export default {
     // 取消修改用户组
     cancelModify() {
       this.$refs.popup.close();
+    },
+    // 上拉加载
+    pullDown() {
+      if (this.loadingType !== 'more') {
+        return;
+      }
+      this.pageNum += 1;
+      this.getInviteList(this.status);
     },
   },
 };

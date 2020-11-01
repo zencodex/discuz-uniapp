@@ -89,8 +89,26 @@ export default {
         });
       }
     },
-    authentication() {
+    froums() {
       const _this = this;
+      const param = {
+        _jv: {
+          type: 'forum',
+        },
+      };
+      _this.$store.dispatch('jv/get', param).then(() => {});
+    },
+    users() {
+      const _this = this;
+      const promsget = {
+        _jv: {
+          type: 'users',
+          id: this.userid,
+        },
+      };
+      _this.$store.dispatch('jv/get', promsget).then(() => {});
+    },
+    authentication() {
       const params = {
         _jv: {
           type: 'users/real',
@@ -102,22 +120,8 @@ export default {
       patchname
         .then(res => {
           if (res) {
-            const param = {
-              _jv: {
-                type: 'forum',
-              },
-            };
-            _this.$store.dispatch('jv/get', param).then(() => {
-              // console.log(1, 'froums');
-            });
-            const promsget = {
-              _jv: {
-                type: 'users',
-                id: this.userid,
-              },
-              // include: 'groups',
-            };
-            _this.$store.dispatch('jv/get', promsget).then(() => {});
+            this.froums();
+            this.users();
             uni.showToast({
               title: this.i18n.t('modify.nameauthensucc'),
               duration: 2000,
@@ -147,11 +151,6 @@ export default {
               },
             ] = err.data.errors;
             this.title1 = sun;
-            uni.showToast({
-              icon: 'none',
-              title: this.title1,
-              duration: 2000,
-            });
           } else if (err.statusCode === 500) {
             this.judge = true;
             if (err.data.errors[0].detail === this.i18n.t('modify.idtitl')) {

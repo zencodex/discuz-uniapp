@@ -182,11 +182,9 @@ export default class Request {
           response.config = handleRe;
           if (this.validateStatus(response.statusCode)) {
             // 成功
-            // console.log('成功response', response);
             response = this.requestComFun(response);
             resolve(response);
           } else {
-            console.log('失败response1', response);
             response = this.requestComFail(response);
             reject(response);
           }
@@ -309,6 +307,7 @@ export default class Request {
       // #ifdef MP-ALIPAY
       fileType,
       // #endif
+      file,
       filePath,
       name,
       header,
@@ -330,6 +329,7 @@ export default class Request {
         fileType,
         // #endif
         filePath,
+        file,
         method: 'UPLOAD',
         name,
         header: header || globalHeader,
@@ -359,6 +359,7 @@ export default class Request {
         fileType: handleRe.fileType,
         // #endif
         filePath: handleRe.filePath,
+        file: handleRe.file,
         name: handleRe.name,
         header: handleRe.header,
         formData: handleRe.formData,
@@ -372,7 +373,6 @@ export default class Request {
             response = this.requestComFun(response);
             resolve(response);
           } else {
-            console.log('response2', response);
             response = this.requestComFail(response);
             reject(response);
           }
@@ -424,7 +424,6 @@ export default class Request {
             response = this.requestComFun(response);
             resolve(response);
           } else {
-            console.log('response3', response);
             response = this.requestComFail(response);
             reject(response);
           }

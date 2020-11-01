@@ -66,6 +66,8 @@ http.interceptor.request(conf => {
     if (accessToken) {
       // eslint-disable-next-line no-param-reassign
       config.header.Authorization = `Bearer ${accessToken}`;
+    } else {
+      delete config.header.Authorization;
     }
   } catch (e) {
     // error

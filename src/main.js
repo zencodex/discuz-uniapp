@@ -11,19 +11,23 @@ import { THEME_DEFAULT, THEME_DARK, DISCUZ_REQUEST_HOST, SITE_PAY } from './comm
 // #ifdef H5
 const publicWhitelistPage = [
   '/pages/home/index',
-  '/pages/topic/index',
+  '/topic/index',
   '/pages/topic/list',
   '/pages/topic/content',
   '/pages/topic/comment',
   '/pages/profile/index',
   '/pages/user/pc-login',
+  '/pages/user/pc-relation',
   '/pages/user/login',
   '/pages/user/uc-login',
   '/pages/user/weichat',
   '/pages/user/login-bind',
+  '/pages/user/login-bind-phone',
   '/pages/user/register-bind',
+  '/pages/user/register-bind-phone',
   '/pages/user/register',
   '/pages/user/phone-login',
+  '/pages/user/phone-login-register',
   '/pages/modify/findpwd',
   '/preview-image',
   '/pages/site/search',
@@ -31,18 +35,23 @@ const publicWhitelistPage = [
   '/pages/site/search-user',
   '/pages/site/info',
   '/pages/site/partner-invite',
-  '/pages/topic/position'
+  '/pages/topic/position',
+  '/pages/common/error'
 ];
 const payWhiteListPage = [
   '/pages/site/info',
   '/pages/user/pc-login',
+  '/pages/user/pc-relation',
   '/pages/user/login',
   '/pages/user/uc-login',
   '/pages/user/weichat',
   '/pages/user/login-bind',
+  '/pages/user/login-bind-phone',
   '/pages/user/register-bind',
+  '/pages/user/register-bind-phone',
   '/pages/user/register',
   '/pages/user/phone-login',
+  '/pages/user/phone-login-register',
   '/pages/modify/findpwd',
   '/pages/site/partner-invite',
 ];
@@ -52,6 +61,12 @@ const apploaded = () => {
   if (forums.set_site) {
     const isLogin = app.$store.getters['session/get']('isLogin');
     if (forums.set_site.site_mode === SITE_PAY) {
+      if (app._route.path === '/pages/user/pc-login' && !isLogin) {
+        uni.redirectTo({
+          url: app._route.fullPath,
+        });
+        return;
+      }
       if (payWhiteListPage.indexOf(app._route.path) === -1 && !isLogin) {
         uni.redirectTo({
           url: '/pages/site/info',

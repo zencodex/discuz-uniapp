@@ -91,7 +91,7 @@ export default {
       const threadShare = this.$store.getters['jv/get'](`/threads/${this.nowThreadId}`);
       return {
         title: threadShare.type === 1 ? threadShare.title : threadShare.firstPost.summaryText,
-        path: `/pages/topic/index?id=${this.nowThreadId}`,
+        path: `/topic/index?id=${this.nowThreadId}`,
       };
     }
   },
@@ -122,8 +122,13 @@ export default {
           'rewardedUsers',
           'lastThreePosts.replyUser',
           'firstPost.images',
+          'firstPost.postGoods',
           'category',
           'threadVideo',
+          'threadAudio',
+          'question',
+          'question.beUser',
+          'question.beUser.groups',
         ],
         'filter[isApproved]': 1,
         'page[number]': this.pageNum,
@@ -199,7 +204,7 @@ export default {
   .favorite-head {
     padding-top: 20rpx;
     padding-left: 40rpx;
-    margin-bottom: 30rpx;
+    // margin-bottom: 30rpx;
     background: --color(--qui-BG-2);
     border-bottom: 2rpx solid --color(--qui-BOR-ED);
   }
@@ -207,6 +212,9 @@ export default {
     height: 78rpx;
   }
   .themeCount .addFine {
+    display: none;
+  }
+  .themeCount .addAsk {
     display: none;
   }
   .themeCount .icon-delete {
@@ -219,7 +227,7 @@ export default {
   }
   .icon-delete {
     position: absolute;
-    top: 15px;
+    top: 25px;
     right: 20px;
   }
 }

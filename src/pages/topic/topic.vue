@@ -56,8 +56,10 @@ export default {
     searchInput() {
       if (this.searchValue) {
         this.types = '';
+        this.shouldShow = true;
       } else {
         this.types = 1;
+        this.shouldShow = false;
       }
       clearTimeout(timer);
       timer = setTimeout(() => {
@@ -68,7 +70,6 @@ export default {
     returnToPost(index = 0) {
       const topicMsg = {};
       topicMsg.keywords = index === -1 ? this.searchValue : this.topics[index].content;
-      console.log(topicMsg, index, this.topics);
       uni.$emit('clickTopic', topicMsg);
 
       uni.navigateBack();
@@ -93,15 +94,11 @@ export default {
         } else {
           this.topics = data;
         }
-        if (this.topics === []) {
-          this.shouldShow = false;
-        }
-
-        if (!data.length) {
-          this.shouldShow = true;
-        } else {
-          this.shouldShow = false;
-        }
+        this.topics.forEach(item => {
+          if (item.content === this.searchValue) {
+            this.shouldShow = false;
+          }
+        });
       });
     },
   },
