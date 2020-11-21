@@ -4,7 +4,7 @@
  * 正式：.env.producment
  */
 
-export const VERSION = 'v2.1.201029';
+export const VERSION = '2.1.201117';
 
 export const DISCUZ_TITLE = process.env.VUE_APP_TITLE;
 
